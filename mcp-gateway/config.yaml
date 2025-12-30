@@ -1,0 +1,93 @@
+# MCP Gateway Configuration
+# See docs/QUICKSTART.md for detailed configuration options
+
+server:
+  transport: stdio  # stdio | http
+  http_port: 3000
+  http_host: 127.0.0.1
+
+# Policy configuration - controls what tools can be called and with what arguments
+policy:
+  # Default deny means tools must be explicitly allowed
+  default_deny: true
+
+  # Global allow list - tools in this list are always allowed
+  allow_tools:
+    - fs.readFile
+    - fs.listDir
+
+  # Global deny list - takes precedence over allow_tools
+  deny_tools: []
+
+  # Per-tool configuration for fine-grained control
+  per_tool:
+    fs.readFile:
+      allow: true
+      max_bytes: 1048576  # 1MB max response
+      timeout_ms: 5000
+    fs.listDir:
+      allow: true
+      timeout_ms: 5000
+    web.fetch:
+      allow: true
+      max_bytes: 5242880  # 5MB max response
+      timeout_ms: 10000
+    db.query:
+      allow: true
+      max_bytes: 10485760  # 10MB max response
+      timeout_ms: 30000
+    db.schema:
+      allow: true
+      timeout_ms: 10000
+
+  # Global defaults
+  global_timeout_ms: 30000
+  global_max_bytes: 10485760  # 10MB
+
+# Audit configuration
+audit:
+  enabled: true
+  file_path: ./audit.jsonl  # Optional: write to file
+  include_args: false       # For privacy, hash args by default
+  include_result: false     # Don't log full results
+
+# Connector configurations
+connectors:
+  filesystem:
+    enabled: true
+    allowed_paths:
+      - ./data
+      - /tmp/mcp-gateway
+    denied_paths:
+      - ./secrets
+      - ./.env
+    max_file_size: 5242880  # 5MB
+
+  http_fetch:
+    enabled: true
+    allowed_domains:
+      - api.github.com
+      - raw.githubusercontent.com
+      - jsonplaceholder.typicode.com
+    denied_domains: []
+    max_response_bytes: 5242880  # 5MB
+    timeout_ms: 10000
+    allowed_methods:
+      - GET
+
+  postgres:
+    enabled: false
+    host: localhost
+    port: 5432
+    # user: readonly_user      # Set via POSTGRES_USER env
+    # password: ""             # Set via POSTGRES_PASSWORD env
+    # database: mydb           # Set via POSTGRES_DATABASE env
+    ssl: false
+    max_rows: 1000
+    query_timeout_ms: 30000
+
+# Actor identity for audit logs
+actor: local-user
+
+# Log level: debug | info | warn | error
+log_level: info
